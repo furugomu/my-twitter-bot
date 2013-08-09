@@ -1,0 +1,14 @@
+{
+  "name": "my-twitter-bot",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "foreman start"
+  },
+  "dependencies": {
+    "xml2js": "*",
+    "mongoose": "*",
+    "ntwitter": "*",
+    "request": "*"
+  }
+}
