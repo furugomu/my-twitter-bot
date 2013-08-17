@@ -1,6 +1,7 @@
 {parseString} = require 'xml2js'
 request = require 'request'
 mongoose = require 'mongoose'
+cheerio = require 'cheerio'
 util = require 'util'
 
 twitter = new require('ntwitter')
@@ -19,6 +20,7 @@ Item = mongoose.model 'Item',
   description: String
   link: { type: String, unique: true }
   pubDate: Date
+  images: [String]
   checked: { type: Boolean, "default": false }
 
 checkAzusa = ->
@@ -34,7 +36,7 @@ checkAzusa = ->
 
 notifyNewItem = (item) ->
   desc = item.description.replace(/<[^>]+>/, '').replace(/\s+/, ' ').substring(0, 40)
-  text = "@furugomu #{item.title} #{desc}... #{item.link}"
+  text = "@furugomu #{item.title} #{desc}... #{item.link} #{item.images.join(' ')}"
   console.log(text)
   twitter.updateStatus text, (err) ->
     console.error(err) if err
@@ -73,9 +75,16 @@ storeRssToMongo = (url, cb) ->
       Item.findOne link: values.link, (err, item) ->
         return cb(err) if err
         return cb(null, item) if item
-        Item.create values, (err, item) ->
-          return cb(err) if err
-          cb(null, item)
+        createItem values, cb
+
+createItem = (values, cb) ->
+  request values.link, (err, res, body) ->
+    return cb(err) if err
+    $ = cheerio.load(body)
+    values.images = [$(img).attr("src") for img in $(".detailOn img")]
+    Item.create values, (err, item) ->
+      return cb(err) if err
+      cb(null, item)
 
 (->
   checkAzusa()
