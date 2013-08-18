@@ -2,6 +2,7 @@
 request = require 'request'
 mongoose = require 'mongoose'
 cheerio = require 'cheerio'
+strftime = require 'strftime'
 util = require 'util'
 
 twitter = new require('ntwitter')
@@ -32,14 +33,28 @@ checkAzusa = ->
     return if item.checked
     item.update checked: true, (err) ->
       console.error(err) if err
-    notifyNewItem(item)
+    tweet item, (err, status) ->
+      console.error(err) if err
 
-notifyNewItem = (item) ->
+tweet = (item, cb) ->
+  date = strftime('%Y-%m-%d %H:%M')
   desc = item.description.replace(/<[^>]+>/, '').replace(/\s+/, ' ').substring(0, 40)
-  text = "@furugomu #{item.title} #{desc}... #{item.link} #{item.images.join(' ')}"
+  text = "@furugomu 『#{item.title}』#{desc}... #{item.link} #{date}"
   console.log(text)
-  twitter.updateStatus text, (err) ->
-    console.error(err) if err
+  req = request.post
+    uri: twitter.options.rest_base + '/statuses/update_with_media.json'
+    oauth:
+      consumer_key: twitter.options.consumer_key
+      consumer_secret: twitter.options.consumer_secret
+      token: twitter.options.access_token_key
+      token_secret: twitter.options.access_token_secret
+    json: true
+  , (err, res, status) ->
+    cb(err, status)
+  form = req.form()
+  if item.images and item.images[0]
+    form.append 'media[]', request(item.images[0])
+  form.append 'status', text
 
 # If-Modified-Since つきでリクエストする
 requestIfModified = (url, cb) ->
@@ -81,7 +96,7 @@ createItem = (values, cb) ->
   request values.link, (err, res, body) ->
     return cb(err) if err
     $ = cheerio.load(body)
-    values.images = [$(img).attr("src") for img in $(".detailOn img")]
+    values.images = ($(img).attr("src") for img in $(".detailOn img"))
     Item.create values, (err, item) ->
       return cb(err) if err
       cb(null, item)

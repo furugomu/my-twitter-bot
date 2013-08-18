@@ -11,6 +11,7 @@
     "ntwitter": "*",
     "request": "*",
     "cheerio": "*",
+    "strftime": "*",
     "coffee-script": "*"
   }
 }
