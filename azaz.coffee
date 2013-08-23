@@ -31,10 +31,10 @@ checkAzusa = ->
       console.error(err)
       return
     return if item.checked
-    item.update checked: true, (err) ->
-      console.error(err) if err
     tweet item, (err, status) ->
-      console.error(err) if err
+      return console.error(err) if err
+      item.update checked: true, (err) ->
+        console.error(err) if err
 
 tweet = (item, cb) ->
   date = strftime('%Y-%m-%d %H:%M')
