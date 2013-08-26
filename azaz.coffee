@@ -44,7 +44,7 @@ tweet = (item, cb) ->
   text = "@furugomu 『#{item.title}』#{desc}... #{item.link} #{date}"
   console.log(text)
   # 画像ない
-  if item.images and item.images[0]
+  if not(item.images and item.images[0])
     twitter.updateStatus(text, cb)
     return
   # 画像ある
