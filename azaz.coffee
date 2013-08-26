@@ -32,15 +32,22 @@ checkAzusa = ->
       return
     return if item.checked
     tweet item, (err, status) ->
-      return console.error(err) if err
+      if err
+        console.log(err)
+        return
       item.update checked: true, (err) ->
-        console.error(err) if err
+        console.log(err) if err
 
 tweet = (item, cb) ->
-  date = strftime('%Y-%m-%d %H:%M')
+  date = strftime('%Y-%m-%d %H:%M', item.pubDate)
   desc = item.description.replace(/<[^>]+>/, '').replace(/\s+/, ' ').substring(0, 40)
   text = "@furugomu 『#{item.title}』#{desc}... #{item.link} #{date}"
   console.log(text)
+  # 画像ない
+  if item.images and item.images[0]
+    twitter.updateStatus(text, cb)
+    return
+  # 画像ある
   req = request.post
     uri: twitter.options.rest_base + '/statuses/update_with_media.json'
     oauth:
@@ -52,8 +59,7 @@ tweet = (item, cb) ->
   , (err, res, status) ->
     cb(err, status)
   form = req.form()
-  if item.images and item.images[0]
-    form.append 'media[]', request(item.images[0])
+  form.append 'media[]', request(item.images[0])
   form.append 'status', text
 
 # If-Modified-Since つきでリクエストする
